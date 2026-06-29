@@ -12,6 +12,8 @@ services:
       APP_ENV: development
 
   frontend:
+    build:
+      target: builder
     command: npm run dev
     volumes:
       - ./frontend:/app

@@ -69,8 +69,13 @@ User submits incident
 
 ## Quick Start
 
+> [!TIP]
+> **Windows Users:** You can use the interactive [run.bat](file:///c:/Users/dharn/Downloads/incident-agent/incident-agent/run.bat) file at the root of the project to automate almost all tasks (setting up the environment, starting the Dev environment, pulling the local Ollama LLM, stopping the containers, and running tests). Just double-click it or execute it in your terminal.
+
 ### 1. Clone and configure
 
+
+**Bash (Linux / macOS):**
 ```bash
 git clone https://github.com/your-org/incident-agent.git
 cd incident-agent
@@ -78,11 +83,22 @@ cp .env.example .env
 # Edit .env — add GROQ_API_KEY and/or OPENAI_API_KEY
 ```
 
+**PowerShell (Windows):**
+```powershell
+git clone https://github.com/your-org/incident-agent.git
+cd incident-agent
+Copy-Item .env.example .env
+# Edit .env — add GROQ_API_KEY and/or OPENAI_API_KEY
+```
+
 ### 2. Run in development
 
 ```bash
 # Start all services with hot reload
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+# Or force a clean build (recommended if you edit Dockerfiles or packages)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 
 # Or start in production mode
 docker compose up -d
@@ -99,6 +115,7 @@ docker compose up -d
 
 ### 4. Pull local LLM (optional — for offline routing)
 
+Ensure your Docker containers are running first, then run:
 ```bash
 docker exec incident_ollama ollama pull llama3.2:3b
 ```
@@ -141,6 +158,7 @@ When `BUDGET_DAILY_USD` is reached, every request automatically falls back to Ol
 
 ## Running Tests
 
+### Bash (Linux / macOS)
 ```bash
 cd backend
 pip install -r requirements.txt pytest pytest-asyncio aiosqlite
@@ -148,6 +166,16 @@ pip install -r requirements.txt pytest pytest-asyncio aiosqlite
 DATABASE_URL=sqlite+aiosqlite:///./test.db \
   APP_ENV=test \
   python -m pytest tests/ -v --asyncio-mode=auto
+```
+
+### PowerShell (Windows)
+```powershell
+cd backend
+python -m pip install -r requirements.txt pytest pytest-asyncio aiosqlite
+
+$env:DATABASE_URL="sqlite+aiosqlite:///./test.db"
+$env:APP_ENV="test"
+python -m pytest tests/ -v --asyncio-mode=auto
 ```
 
 **14 tests, 0 failures** — covering:
