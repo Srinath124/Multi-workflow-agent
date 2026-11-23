@@ -10,6 +10,7 @@ import numpy as np
 import json
 import logging
 import uuid
+import hashlib
 
 from app.models.memory_record import MemoryRecord, MemoryCategory
 from app.core.config import settings
@@ -40,7 +41,7 @@ def _simple_embedding(text: str) -> List[float]:
     dim = 128
     vec = [0.0] * dim
     for word, count in vocab.items():
-        idx = hash(word) % dim
+        idx = int(hashlib.md5(word.encode("utf-8")).hexdigest(), 16) % dim
         vec[idx] += count
     total = sum(v * v for v in vec) ** 0.5 or 1.0
     return [v / total for v in vec]
@@ -196,9 +197,10 @@ class HindsightMemoryService:
         category: Optional[MemoryCategory] = None,
         limit: int = 50,
     ) -> List[Dict[str, Any]]:
-        stmt = select(MemoryRecord).order_by(MemoryRecord.created_at.desc()).limit(limit)
+        stmt = select(MemoryRecord)
         if category:
             stmt = stmt.where(MemoryRecord.category == category)
+        stmt = stmt.order_by(MemoryRecord.created_at.desc()).limit(limit)
         records = (await self.db.execute(stmt)).scalars().all()
         return [
             {

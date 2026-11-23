@@ -128,6 +128,27 @@ async def list_incidents(
     return [_to_response(i) for i in incidents]
 
 
+@router.get("/incidents/stats/summary")
+async def get_stats(db: AsyncSession = Depends(get_db)):
+    \"\"\"Dashboard summary statistics.\"\"\"
+    total = (await db.execute(select(func.count(Incident.id)))).scalar()
+    resolved = (await db.execute(
+        select(func.count(Incident.id)).where(Incident.status == IncidentStatus.RESOLVED)
+    )).scalar()
+    critical = (await db.execute(
+        select(func.count(Incident.id)).where(Incident.severity == Severity.CRITICAL)
+    )).scalar()
+    total_cost = (await db.execute(select(func.sum(Incident.cost_usd)))).scalar() or 0.0
+
+    return {
+        "total_incidents": total,
+        "resolved": resolved,
+        "open": total - resolved,
+        "critical": critical,
+        "total_ai_cost_usd": round(total_cost, 6),
+    }
+
+
 @router.get("/incidents/{incident_id}")
 async def get_incident(incident_id: str, db: AsyncSession = Depends(get_db)):
     """Get a single incident by ID."""
@@ -151,27 +172,6 @@ async def resolve_incident(
         lessons=payload.lessons,
     )
     return result
-
-
-@router.get("/incidents/stats/summary")
-async def get_stats(db: AsyncSession = Depends(get_db)):
-    """Dashboard summary statistics."""
-    total = (await db.execute(select(func.count(Incident.id)))).scalar()
-    resolved = (await db.execute(
-        select(func.count(Incident.id)).where(Incident.status == IncidentStatus.RESOLVED)
-    )).scalar()
-    critical = (await db.execute(
-        select(func.count(Incident.id)).where(Incident.severity == Severity.CRITICAL)
-    )).scalar()
-    total_cost = (await db.execute(select(func.sum(Incident.cost_usd)))).scalar() or 0.0
-
-    return {
-        "total_incidents": total,
-        "resolved": resolved,
-        "open": total - resolved,
-        "critical": critical,
-        "total_ai_cost_usd": round(total_cost, 6),
-    }
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
